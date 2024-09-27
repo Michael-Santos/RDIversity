@@ -1,2 +1,4 @@
 # RDIversity
-Unit test introduction presentation
+Project created to introduce the basic concepts about unit tests.
+
+

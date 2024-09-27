@@ -71,5 +71,138 @@ namespace Shopping.Api.Services.UnitTest
             Assert.That(result.Items.First().ProductId, Is.EqualTo(product.Id));
             _mockRepository.Verify();
         }
+
+        [Test]
+        public void GetAll_WhenHasCarts_ShouldReturnCarts()
+        {
+            // Arrange
+            var cartsList = new List<Cart>()
+            {
+                new Cart()
+                {
+                    Id = 1
+                },
+                new Cart()
+                {
+                    Id = 2
+                }
+            };
+
+            _cartRepositoryMock.Setup(x => x.GetAll()).Returns(cartsList);
+
+            // Act
+            var result = _cartService.GetAll();
+
+            // Assert
+            Assert.That(result.Count(), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void RemoveProduct_WhenCartDoesNotExist_ShouldThrowException()
+        {
+            // Arrange
+            _cartRepositoryMock.Setup(x => x.GetById(1)).Returns((Cart)null).Verifiable();
+
+            // Act
+            TestDelegate act = () => _cartService.RemoveProduct(1, 1);
+
+            // Assert
+            var exception = Assert.Throws<ArgumentException>(act);
+            Assert.That("Cart not found.", Is.EqualTo(exception.Message));
+            _mockRepository.Verify();
+        }
+
+        [Test]
+        public void RemoveProduct_WhenCartExistsAndProductIsNotFound_ShouldNotUpdateCart()
+        {
+            // Arrange
+            var cartItem = new CartItem()
+            {
+                ProductId = 2
+            };
+            var cart = new Cart()
+            {
+                Id = 1,
+                Items = new List<CartItem>()
+                {
+                    cartItem
+                }
+            };
+            _cartRepositoryMock.Setup(x => x.GetById(1)).Returns(cart).Verifiable();
+
+            // Act
+            _cartService.RemoveProduct(1, 1);
+
+            // Assert
+            _mockRepository.Verify();
+        }
+
+        [Test]
+        public void RemoveProduct_WhenCartExistsAndProductIsFound_ShouldUpdateCart()
+        {
+            // Arrange
+            var cartItem = new CartItem()
+            {
+                ProductId = 1
+            };
+            var cart = new Cart()
+            {
+                Id = 1,
+                Items = new List<CartItem>()
+                {
+                    cartItem
+                }
+            };
+            _cartRepositoryMock.Setup(x => x.GetById(1)).Returns(cart).Verifiable();
+            _cartRepositoryMock.Setup(x => x.Save()).Verifiable();
+
+            // Act
+            _cartService.RemoveProduct(1, 1);
+
+            // Assert
+            _mockRepository.Verify();
+        }
+
+        [Test]
+        public void DeleteCart_WhenCartIsNotFound_ShouldThrowException()
+        {
+            // Arrange
+            _cartRepositoryMock.Setup(x => x.GetById(1)).Returns((Cart) null);
+
+            // Act
+            TestDelegate act = () => _cartService.DeleteCart(1);
+
+            // Arrange
+            var exception = Assert.Throws<ArgumentException>(act);
+            Assert.That("Cart not found.", Is.EqualTo(exception.Message));
+            _mockRepository.Verify();
+        }
+
+        [Test]
+        public void DeleteCart_WhenCartIsFound_ShouldDeleteAndSave()
+        {
+            // Arrange
+            var cartItem = new CartItem()
+            {
+                ProductId = 1
+            };
+            var cart = new Cart()
+            {
+                Id = 1,
+                Items = new List<CartItem>()
+                {
+                    cartItem
+                }
+            };
+            _cartRepositoryMock.Setup(x => x.GetById(1)).Returns(cart);
+            _cartRepositoryMock.Setup(x => x.Delete(cart));
+            _cartRepositoryMock.Setup(x => x.Save());
+
+            // Act
+            _cartService.DeleteCart(1);
+
+            // Arrange
+            _mockRepository.Verify();
+        }
     }
 }
